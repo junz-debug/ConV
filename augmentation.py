@@ -16,7 +16,7 @@ class DataAugmentationDINO(object):
         
         # Geometric augmentation
         self.geometric_augmentation_global1 = transforms.Compose([
-            transforms.RandomHorizontalFlip(p=1),
+            transforms.RandomHorizontalFlip(p=0.8),
         ])
         
         # Color jittering
@@ -29,7 +29,7 @@ class DataAugmentationDINO(object):
                     saturation=0.4 * scale, 
                     hue=0.1 * scale
                 )],
-                p=1,
+                p=0.8,
             ),
         ])
         
@@ -70,7 +70,7 @@ class DataAugmentationDINO(object):
         
         if np.array(image).shape[0] < 224 or np.array(image).shape[1] < 224:
             crops_all = [
-                self.crop(self.centercrop(image)) for _ in range(self.local_crops_number)
+                self.centercrop(image) for _ in range(self.local_crops_number)
             ]
             for crops_image in crops_all:
                 output["source"].append(self.source_trans(crops_image))
@@ -83,9 +83,9 @@ class DataAugmentationDINO(object):
             
             for crops_image in crops_all1:
                 output["source"].append(self.source_trans(crops_image))
-            for crops_image in crops_all1:
                 output["global_crops"].append(self.global_transfo_all(crops_image))
         
 
         return output
+
 
