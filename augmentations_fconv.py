@@ -40,23 +40,16 @@ class DataAugmentationDINO_conv(object):
     
 
         self.source_trans = transforms.Compose([
-            # transforms.RandomCrop(224),
-            # transforms.CenterCrop(224),
             transforms.ToTensor(),
             make_normalize_transform(),
         ])
 
-        # self.crop = transforms.Compose([
-        #     transforms.RandomCrop(224),
-           
-        # ])
         self.crop1 = transforms.Compose([
                     transforms.RandomCrop(224),  
                     ])
         
 
         self.crop2 = transforms.Compose([
-                    # transforms.Resize(224),  
                     transforms.Resize(384),
                     transforms.RandomCrop(224),  
                     ])
@@ -93,12 +86,11 @@ class DataAugmentationDINO_conv(object):
 
         scale = 0.3  
         color_jittering1 = transforms.Compose(
-            [   # transforms.RandomCrop(224),
+            [   
                 transforms.RandomApply(
                     [transforms.ColorJitter(brightness=0.4 * scale, contrast=0.4 * scale, saturation=0.2 * scale, hue=0.1 * scale)],
-                    p=1, #0.8
+                    p=1, 
                 ),
-                # transforms.RandomGrayscale(p=1), #0.2
             ]
         )
 
@@ -106,9 +98,8 @@ class DataAugmentationDINO_conv(object):
         if np.array(image).shape[0]<224 or np.array(image).shape[1]<224:
             image = self.centercrop((image))
         
-        p = random.random() 
-    
-        crops_image = self.crop1(trans(image))
+        
+        crops_image = self.centercrop(trans(image))
         
         output["source"].append(self.source_trans(crops_image))
 
@@ -132,32 +123,14 @@ class DataAugmentationDINO_conv_test(object):
     
 
         self.source_trans = transforms.Compose([
-            # transforms.RandomCrop(224),
-            # transforms.CenterCrop(224),
             transforms.ToTensor(),
             make_normalize_transform(),
         ])
-        self.crop1 = transforms.Compose([
-                    transforms.RandomCrop(224), 
-                    ])
-
-        self.crop3 = transforms.Compose([
-                    transforms.Resize(256),  
-                    transforms.RandomCrop(224),  
-                    ])
         
-        self.crop2 = transforms.Compose([
-                    # transforms.Resize(224),  
-                    transforms.Resize(384),
-                    transforms.RandomCrop(224),  
-                    ])
-        
-
         self.centercrop = transforms.Compose([
             transforms.CenterCrop(224),
            
         ])
-        self.rotate = transforms.RandomRotation(90)
 
         self.geometric_augmentation_global1 = transforms.Compose(
             [
@@ -173,19 +146,17 @@ class DataAugmentationDINO_conv_test(object):
         output["source"] = []
         output['trans'] = []
 
-        scale = 0.3   #best 0.3
+        scale = 0.3   
         color_jittering1 = transforms.Compose(
-            [   # transforms.RandomCrop(224),
+            [   
                 transforms.RandomApply(
                     [transforms.ColorJitter(brightness=0.4 * scale, contrast=0.4 * scale, saturation=0.2 * scale, hue=0.1 * scale)],
-                    p=1, #0.8
+                    p=1, 
                 ),
-                # transforms.RandomGrayscale(p=1), #0.2
             ]
         )
 
         crops_image = self.centercrop(image)
-        # crops_image = data_augment(crops_image)
         
         output["source"].append(self.source_trans(crops_image))  
 
