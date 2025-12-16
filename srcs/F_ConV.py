@@ -14,6 +14,10 @@ from tqdm import tqdm
 from torch.cuda.amp import autocast
 import random
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from model import flow_model
 from utils import get_loss_outlier_genimage, get_loss_outlier_progan
 from augmentations_fconv import DataAugmentationDINO_conv_test
@@ -327,8 +331,7 @@ class FeatureDataset(Dataset):
 
 
 def validate_react(dinov2, flow, loader, temperature=None):
-    """Validate the model using original images.
-    
+    """
     Args:
         dinov2: DINOv2 model
         flow: Flow model
@@ -535,13 +538,11 @@ if __name__ == '__main__':
                 with autocast():
                     # features["source"][0] and features["trans"][0] are already DINOv2 features
                     feature1 = flow(features["source"][0].half().cuda())
-                    # Calculate jacobian immediately after feature1 forward pass
                     jac1 = flow.nf.jacobian(run_forward=False)
                     
                     feature2 = flow(features["trans"][0].half().cuda())
                     jac2 = flow.nf.jacobian(run_forward=False)
 
-                    # Calculate jacobian immediately after feature2 forward pass
                     
                     shape_loss, consistent_loss, loss = get_loss_outlier_progan(
                         feature1, feature2, 
@@ -625,4 +626,5 @@ if __name__ == '__main__':
             import traceback
             traceback.print_exc()
             raise
+
 
