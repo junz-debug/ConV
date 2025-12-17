@@ -56,38 +56,13 @@ We propose **Consistency Verification (ConV)**, a novel framework that detects g
   
 ## Installation
 
-### Requirements
-
-- Python 3.8 or higher
-- PyTorch 1.9 or higher
-- CUDA (recommended for GPU acceleration)
-
-### Dependencies
-
-Install the required dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Core dependencies include:
-- `torch>=1.9.0`
-- `torchvision>=0.10.0`
-- `numpy>=1.21.0`
-- `scikit-learn>=0.24.0`
-- `Pillow>=8.0.0`
-
-### Development Setup
-
-For development or customization:
-
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/ConV.git
 cd ConV
 
 # Create conda environment (optional)
-conda create -n conv python=3.8
+conda create -n conv python=3.10
 conda activate conv
 
 # Install dependencies
@@ -96,188 +71,77 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Quick Start
+### 1. Dataset Structure
 
-#### Basic Detection 
+#### Training Dataset (Two Organization Formats)
 
-The simplest approach compares DINOv2 feature similarities between original and augmented images:
+**Format 1: Separate Mode** (`--path_mode separate`)
+```
+training_data/
+├── 0_real/           # Natural images
+└── 1_fake/           # Generated images
+```
+
+**Format 2: Subdirectory Mode** (`--path_mode subdirs`)
+```
+training_data/
+├── subset1/
+│   ├── 0_real/    # Natural images
+│   └── 1_fake/    # Generated images
+├── subset2/
+│   ├── 0_real/
+│   └── 1_fake/
+└── ...
+```
+
+#### Test Dataset (Only One Format)
+
+**Separate Mode** (`--path_mode separate`)
+```
+test_data/
+├── 0_real/           # Natural images
+└── 1_fake/           # Generated images
+```
+
+---
+
+### 2. Feature Extraction (for F-ConV Training)
+
+F-ConV requires pre-extracted DINOv2 features for training. Use the provided script:
 
 ```bash
-python main.py \
-  --real_path /path/to/real/images \
-  --fake_path /path/to/fake/images \
-  --max_sample 1000 \
-  --batch_size 64 \
-  --num_workers 2 \
-  --crops_num 5 \
-  --aggregation mean
+bash scripts/extract_features.sh
 ```
 
-**Parameters:**
-- `--real_path` (required): Path to directory containing real images
-- `--fake_path` (required): Path to directory containing generated images
-- `--max_sample` (default: 1000): Maximum number of samples per class (0 for random sampling of 1000 images)
-- `--batch_size` (default: 64): Batch size for processing
-- `--num_workers` (default: 2): Number of data loading threads
-- `--crops_num` (default: 5): Number of image crops for multi-view consistency analysis
-- `--threshold` (default: 0): Classification threshold (0 for automatic threshold selection)
-- `--aggregation` (default: 'mean'): Distance aggregation method (`mean`, `max`, or `min`)
+**Configuration:**
+1. Open `scripts/extract_features.sh`
+2. Set `train_real_path` and `train_fake_path` to your training data paths (for subdirs mode, you just need to set one path)
+3. Set `train_path_mode` to `"separate"` or `"subdirs"` based on your dataset structure
+4. Set `train_output` to specify output feature file path (e.g., `features_train.pkl`)
+5. Run the script
 
-#### F-ConV Method (Flow-based Convolutional)
+The script will automatically extract features according to your dataset structure.
 
-Detection using Normalizing Flow models to shape natural image distributions.
+---
 
+### 3. Running ConV (Training-Free Detection)
 
-**Training + Inference:**
+Use the provided script for batch evaluation:
 
 ```bash
-python F-ConV.py \
-  --real_path /path/to/test/real/images \
-  --fake_path /path/to/test/fake/images \
-  --train_real_path /path/to/train/real/images \
-  --train_fake_path /path/to/train/fake/images \
-  --path_mode separate \
-  --data_mode ours \
-  --max_sample 0 \
-  --train_max_sample 0 \
-  --batch_size 256 \
-  --max_epoch 1 \
-  --lr 1e-5 \
-  --crops_num 1 \
-  --model_path /path/to/save/model.pth
+bash scripts/run_conv.sh
 ```
 
-**Subdirectory Mode (for datasets with 0_real/1_fake structure):**
-
-```bash
-python F-ConV.py \
-  --real_path /path/to/dataset/root \
-  --path_mode subdirs \
-  --data_mode ours \
-  --max_sample 0 \
-  --batch_size 256 \
-  --crops_num 1 \
-  --model_path /path/to/model.pth \
-  --load_model
-```
-
-**F-ConV Parameters:**
-- `--real_path` (required): Path to real images or root path for subdirs mode
-- `--fake_path` (optional): Path to fake images (not needed for subdirs mode)
-- `--data_mode` (default: 'ours'): Data mode (`wang2020` or `ours`)
-- `--path_mode` (default: 'separate'): Path mode (`separate` for separate real/fake paths, `subdirs` for 0_real/1_fake structure)
-- `--max_sample` (default: 0): Maximum samples per class for testing (0 for all)
-- `--batch_size` (default: 256): Batch size
-- `--num_workers` (default: 4): Number of data loading threads
-- `--max_epoch` (default: 1): Number of training epochs
-- `--lr` (default: 1e-5): Learning rate
-- `--crops_num` (default: 1): Number of crops
-- `--train_real_path` (optional): Training real image path
-- `--train_fake_path` (optional): Training fake image path
-- `--train_path_mode` (default: 'separate'): Training path mode
-- `--train_max_sample` (default: 0): Maximum samples per class for training (0 for all)
-- `--model_path` (optional): Path to save/load model weights
-- `--load_model` (flag): Load model from model_path instead of training
-
-#### Feature Extraction Mode
-
-For large-scale datasets, features can be pre-extracted for efficient training:
-
-**Extract Features:**
-
-```bash
-python extract_features.py \
-  --real_path /path/to/real/images \
-  --fake_path /path/to/fake/images \
-  --path_mode separate \
-  --data_mode ours \
-  --max_sample 0 \
-  --output_path features.pkl \
-  --batch_size 64 \
-  --num_workers 4
-```
-
-**Training with Pre-extracted Features:**
-
-```bash
-python F-ConV-feature.py \
-  --real_path /path/to/test/real/images \
-  --fake_path /path/to/test/fake/images \
-  --train_feature_path features.pkl \
-  --path_mode separate \
-  --data_mode ours \
-  --max_sample 0 \
-  --batch_size 256 \
-  --max_epoch 1 \
-  --lr 1e-5 \
-  --model_path /path/to/save/model.pth
-```
-
-**F-ConV-feature Additional Parameters:**
-- `--train_feature_path`: Path to pre-extracted feature pickle file
-- `--val_real_path` (optional): Real image path for validation during training
-- `--val_fake_path` (optional): Fake image path for validation during training
-- `--val_path_mode` (default: 'separate'): Validation path mode
-- `--val_max_sample` (default: 1000): Maximum samples per class for validation
-- `--margin` (default: 2000): Margin parameter for loss function
-- `--temperature` (optional): Temperature parameter for sigmoid in testing
-
-### Batch Evaluation
-
-Evaluate on multiple datasets using the provided script:
-
-```bash
-bash run_all_datasets.sh
-```
-
-This script automatically iterates through configured dataset paths and aggregates results.
-
-## Configuration
-
-### Model Configuration (config.py)
-
-Key configuration parameters:
-
-```python
-n_coupling_blocks = 2    # Number of coupling blocks in Flow model
-fc_internal = 4096        # Hidden units in fully connected layers
-```
-
-### Data Format
-
-The project supports multiple data organization formats:
-
-1. **Separate Mode** (`--path_mode separate`): Separate directories for real and generated images
+**Configuration:**
+1. Open `scripts/run_conv.sh`
+2. Modify the arrays:
+   ```bash
+   real_paths=("path/to/test/real1" "path/to/test/real2")
+   fake_paths=("path/to/test/fake1" "path/to/test/fake2")
+   dataset_names=("Dataset1" "Dataset2")
    ```
-   dataset/
-   ├── real/     # Real images
-   └── fake/     # Generated images
-   ```
-   Usage: `--real_path /path/to/real --fake_path /path/to/fake --path_mode separate`
-
-2. **Subdirectory Mode** (`--path_mode subdirs`): Single root directory with subdirectories containing `0_real` and `1_fake` folders
-   ```
-   dataset/
-   ├── subset1/
-   │   ├── 0_real/  # Real images
-   │   └── 1_fake/  # Generated images
-   ├── subset2/
-   │   ├── 0_real/
-   │   └── 1_fake/
-   └── ...
-   ```
-   Usage: `--real_path /path/to/dataset/root --path_mode subdirs`
-
-
-4. **Supported Image Formats**: PNG, JPG, JPEG
-
-## Evaluation Metrics
-
-The following evaluation metrics are provided:
-
-- **AUROC** (Area Under ROC Curve): Area under the receiver operating characteristic curve, measuring classification performance
-- **FPR@95%TPR**: False positive rate at 95% true positive rate
-- **Accuracy**: Classification accuracy based on optimal threshold selection
+3. Adjust parameters (batch size, crops_num, etc.)
+4. Run the script
 
 Example output:
 ```
@@ -285,6 +149,40 @@ AUROC: 0.9523
 AP: 0.9456
 ACC: 0.9234
 ```
+
+---
+
+### 4. Running F-ConV (Training-Based Detection)
+
+Use the provided script for batch evaluation with training:
+
+```bash
+bash scripts/run_fconv.sh
+```
+
+**Configuration:**
+1. Open `scripts/run_fconv.sh`
+2. Set training feature path:
+   ```bash
+   train_feature_path="features_train.pkl"  # From step 2
+   # To load a pre-trained model for detection, leave train_feature_path empty: train_feature_path=""
+   ```
+3. Set model save path:
+   ```bash
+   model_path="fconv_model.pth"
+   ```
+4. Modify test dataset arrays:
+   ```bash
+   real_paths=("path/to/test/real1" "path/to/test/real2")
+   fake_paths=("path/to/test/fake1" "path/to/test/fake2")
+   dataset_names=("Dataset1" "Dataset2")
+   ```
+5. Run the script
+
+The script will:
+- Train the F-ConV model on extracted features
+- Test on all specified datasets
+- Save results to `results/` directory
 
 ## Methodology
 
@@ -341,24 +239,29 @@ If you find this work useful for your research, please cite:
 ```
 
 
-## File Structure
-
 ```
 ConV/
-├── main.py                 # Basic detection method (DINOv2 + cosine similarity)
-├── F-ConV.py              # F-ConV method (Flow-based)
-├── F-ConV-feature.py      # F-ConV with pre-extracted features
-├── model.py               # Normalizing Flow model definition
-├── config.py              # Configuration file
-├── utils.py               # Utility functions and loss functions
-├── augmentation.py        # Data augmentation (basic method)
-├── augmentations_fconv.py # Data augmentation (F-ConV method)
-├── extract_features.py    # Feature extraction script
-├── extract_features.sh    # Feature extraction shell script
-├── run_all_datasets.sh   # Batch evaluation script
-├── requirements.txt       # Dependency list
-└── README.md             # This file
+├── srcs/                     # Source code directory
+│   ├── ConV.py              # Basic ConV detection method (training-free)
+│   ├── F_ConV.py            # F-ConV method (Flow-based with Normalizing Flow)
+│   └── extract_features.py  # DINOv2 feature extraction script
+├── scripts/                  # Shell scripts for batch processing
+│   ├── run_conv.sh          # Batch evaluation script for ConV method
+│   ├── run_fconv.sh         # Batch evaluation script for F-ConV method
+│   └── extract_features.sh  # Feature extraction shell script
+├── model.py                  # Normalizing Flow model definition
+├── config.py                 # Model configuration (coupling blocks, hidden units, etc.)
+├── freia_funcs.py           # FrEIA framework utility functions
+├── utils.py                  # Utility functions and loss functions
+├── augmentation.py           # Data augmentation for ConV method
+├── augmentations_fconv.py    # Data augmentation for F-ConV method
+├── my_transforms.py          # Custom image transformation functions
+├── requirements.txt          # Python dependencies with CUDA support
+├── framework.png             # Framework architecture diagram
+├── LICENSE                   # MIT License
+└── README.md                 # This documentation
 ```
+
 
 ## License
 
