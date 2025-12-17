@@ -19,7 +19,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from model import flow_model
-from utils import get_loss_outlier_genimage, get_loss_outlier_progan
+from utils import *
 from augmentations_fconv import DataAugmentationDINO_conv_test
 
 
@@ -544,7 +544,7 @@ if __name__ == '__main__':
                     jac2 = flow.nf.jacobian(run_forward=False)
 
                     
-                    shape_loss, consistent_loss, loss = get_loss_outlier_progan(
+                    shape_loss, consistent_loss, loss = get_loss_outlier_progan2(
                         feature1, feature2, 
                         jac1,
                         jac2, 
@@ -555,7 +555,7 @@ if __name__ == '__main__':
 
                 if idx % 500 == 0:
                     
-                    print(f"Shape loss: {shape_loss:.4f}, Consistent loss: {consistent_loss:.4f}, Total loss: {loss:.4f}")
+                    print(f"idx:{idx}, Shape loss: {shape_loss:.4f}, Consistent loss: {consistent_loss:.4f}, Total loss: {loss:.4f}")
 
                 #     acc = validate_react(dinov2, flow, test_loader)
                 #     print(f"\nEpoch {epoch+1} Test Accuracy: {acc:.4f}")
