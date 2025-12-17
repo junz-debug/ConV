@@ -1,6 +1,9 @@
-torch>=1.9.0
-torchvision>=0.10.0
-numpy>=1.21.0
-scikit-learn>=0.24.0
-Pillow>=8.0.0
-
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.2.1+cu118
+torchvision==0.17.1+cu118
+numpy==1.24.3
+scipy<1.13.0
+scikit-learn
+Pillow
+tqdm
+opencv-python<4.10.0
