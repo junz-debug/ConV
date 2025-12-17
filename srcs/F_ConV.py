@@ -544,7 +544,7 @@ if __name__ == '__main__':
                     jac2 = flow.nf.jacobian(run_forward=False)
 
                     
-                    shape_loss, consistent_loss, loss = get_loss_outlier_progan2(
+                    shape_loss, consistent_loss, loss = get_loss_outlier_progan(
                         feature1, feature2, 
                         jac1,
                         jac2, 
